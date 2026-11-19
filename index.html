@@ -79,7 +79,7 @@ const WP=[{n:'Rapid Blaster',a:15,r:.16,d:12,p:1,s:.015,v:48,c:0xff4d4d},{n:'SMG
 let cfg={name:'Pemain',lv:0,sb:0,skin:0,face:0,hat:0,out:1,acc:0,map:0};
 try{Object.assign(cfg,JSON.parse(localStorage.getItem('rbqa')||'{}'))}catch(e){}
 const save=()=>{try{localStorage.setItem('rbqa',JSON.stringify(cfg))}catch(e){}};
-const toast=t=>{const e=$('tst');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',3500)};
+const toast=(t,d=3500)=>{const e=$('tst');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',d)};
 if(typeof THREE==='undefined'){document.body.innerHTML='<p style="padding:20px">Three.js gagal dimuat. Periksa koneksi internet lalu muat ulang.</p>';return}
 /* audio */
 let ac,mut=false;
@@ -279,7 +279,7 @@ function leaveRoom(){if(rm){rmUn.forEach(f=>f());rm.leave().catch(()=>{});rm=nul
 const wait=ms=>new Promise(s=>setTimeout(s,ms)),others=r=>r.peers().some(p=>!p.sameTab&&p.kind=='viewer');
 function nextCode(){let c;do{c=String(rn(1000,9999))}while(c==lastCode);lastCode=c;return c}
 async function roomStart(host,code){let RM=null;try{RM=await claude.use('room')}catch(e){}
-if(!RM)return false;$('ms').textContent='Menghubungkan...';
+if(!RM){if(typeof claude!=='undefined')toast('Room claude.ai tidak tersedia, mencoba PeerJS...',4000);return false}$('ms').textContent='Menghubungkan...';toast('⏳ Menghubungkan ke room...',20000);
 try{let r=null;
 if(host){for(let t=0;t<5;t++){const c=nextCode();r=await RM.join('rbqa-'+c);await wait(900);if(!others(r)){code=c;break}await r.leave().catch(()=>{});r=null}
 if(!r){netFail('Gagal membuat room, coba lagi.');return true}}
@@ -289,17 +289,17 @@ rm=r;isHost=host;room=code;go('mp');const my=r.peers().find(p=>p.sameTab);if(my)
 if(host)toast('Room '+code+' dibuat. Kirim kode ke temanmu dan minta mereka membuka link game ini.');return true}
 catch(e){netFail('Multiplayer tidak bisa dipakai ('+(e&&e.code||'error')+').');return true}}
 function netStart(host,code){if(typeof claude!=='undefined'&&claude&&claude.use){roomStart(host,code).then(ok=>{if(!ok)peerStart(host,host?nextCode():code)})}else peerStart(host,host?nextCode():code)}
-function netFail(t){$('ms').textContent=t;toast(t);try{peer&&peer.destroy()}catch(e){}peer=null}
-function peerStart(host,code){$('ms').textContent='Menghubungkan...';isHost=host;room=code;conns=[];hostConn=null;let ok=false;
-try{peer=new Peer(host?'rbqa'+code:undefined)}catch(e){netFail('PeerJS tidak tersedia. Periksa koneksi internet.');return}
-const to=setTimeout(()=>{if(!ok)netFail('Server PeerJS tidak terjangkau. Multiplayer butuh koneksi internet bebas.')},9000);
-peer.on('error',er=>{clearTimeout(to);if(ok){toast('Koneksi: '+er.type);return}netFail(er.type=='unavailable-id'?'Kode room sedang dipakai, coba lagi.':er.type=='peer-unavailable'?'Room tidak ditemukan.':'Gagal terhubung ('+er.type+')')});
+function netFail(t){$('ms').textContent=t;toast('⚠️ '+t,10000);try{peer&&peer.destroy()}catch(e){}peer=null}
+function peerStart(host,code){$('ms').textContent='Menghubungkan...';toast('⏳ Menghubungkan lewat PeerJS...',20000);isHost=host;room=code;conns=[];hostConn=null;let ok=false;
+try{peer=new Peer(host?'rbqa'+code:undefined,{config:{iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'},{urls:'stun:global.stun.twilio.com:3478'}]}})}catch(e){netFail('PeerJS tidak tersedia. Periksa koneksi internet.');return}
+const to=setTimeout(()=>{if(!ok)netFail('Server PeerJS tidak terjangkau (timeout). Cek internet, matikan VPN atau adblock, lalu coba lagi.')},15000);
+peer.on('error',er=>{clearTimeout(to);if(ok){toast('Koneksi: '+er.type);return}netFail(er.type=='unavailable-id'?'Kode room sedang dipakai, coba lagi.':er.type=='peer-unavailable'?'Room tidak ditemukan.':'Gagal terhubung ke server PeerJS ('+er.type+'). Cek internet atau matikan VPN/adblock lalu coba lagi.')});
 peer.on('open',pid=>{if(host){ok=true;clearTimeout(to);go('mp',pid)}else{const c=peer.connect('rbqa'+code,{reliable:true});hostConn=c;c.on('open',()=>{ok=true;clearTimeout(to);go('mp',pid)});c.on('data',onData);c.on('close',()=>toast('Terputus dari host'))}});
 if(host)peer.on('connection',c=>{conns.push(c);c.on('open',()=>c.send({t:'mp',i:cfg.map,m:mis,id:me.id}));c.on('data',m=>{onData(m);conns.forEach(x=>{if(x!==c&&x.open)x.send(m)})});c.on('close',()=>{conns=conns.filter(x=>x!==c);onData({t:'lv',id:c.peer});send({t:'lv',id:c.peer})})})}
 /* start */
 function go(m,pid){if(mode=='play')return;mode='play';net=m=='mp';scene.remove(lob);me=mkE(cfg,cfg.name,false);if(pid)me.id=pid;scene.add(me.mesh);spawn(me);me.shield=2;
 if(!net)for(let i=0;i<4;i++){const b=mkE({skin:rn(0,5),face:rn(0,3),hat:rn(0,4),out:rn(0,5),acc:rn(0,4)},['Bot Alpha','Bot Beta','Bot Gamma','Bot Delta'][i],true);b.w=[0,1,3][rn(0,2)];bots.push(b);scene.add(b.mesh);spawn(b)}
-$('lobby').style.display='none';$('hud').hidden=false;$('rm').textContent=net?'Room: '+room:'Solo vs Bot AI';$('cp').style.display=net?'':'none';yaw=0;pitch=0;try{document.body.requestPointerLock()}catch(e){}music();beep(600,.15,'triangle',.07);setTimeout(()=>{$('hint').style.display='none'},25000)}
+$('lobby').style.display='none';$('hud').hidden=false;$('rm').textContent=net?'Room: '+room:'Solo vs Bot AI';$('cp').style.display=net?'':'none';yaw=0;pitch=0;try{document.body.requestPointerLock()}catch(e){}music();beep(600,.15,'triangle',.07);if(net){$('tst').style.display='none';if(isHost)toast('Room '+room+' dibuat. Bagikan kode ini ke teman.',8000)}setTimeout(()=>{$('hint').style.display='none'},25000)}
 $('b1').onclick=()=>go('solo');
 $('b2').onclick=()=>netStart(true,nextCode());
 $('b3').onclick=()=>{const c=$('rc').value.trim();if(!/^\d{4}$/.test(c)){$('ms').textContent='Masukkan kode room 4 digit.';return}netStart(false,c)};
