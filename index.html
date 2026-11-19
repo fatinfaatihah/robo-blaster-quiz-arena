@@ -8,7 +8,8 @@
 :root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 html,body{height:100%;margin:0;background:#0a0e1e;overflow:hidden;font-family:'Trebuchet MS',system-ui,sans-serif;color:#fff;-webkit-user-select:none;user-select:none}
-#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:grab}
+#c:active{cursor:grabbing}
 .pn{background:rgba(10,14,34,.75);border:2px solid #ffd400;border-radius:14px;padding:12px;backdrop-filter:blur(4px)}
 #lobby{position:fixed;inset:0;display:flex;justify-content:space-between;align-items:center;padding:10px;gap:10px;pointer-events:none;box-sizing:border-box}
 #lobby .pn{pointer-events:auto;width:295px;max-height:92%;overflow:auto;box-sizing:border-box}
@@ -55,7 +56,7 @@ label select,label input,#rc{width:100%;box-sizing:border-box;padding:7px;border
       <optgroup label="🕌 Agama / Diniyyah"><option value="5">Akidah Akhlak</option><option value="6">Fiqih</option><option value="7">Al-Qur’an & Hadis</option><option value="8">Sejarah Islam</option><option value="9">Campuran Diniyyah</option></optgroup>
     </select></label>
     <label>Lokasi arena<select id="mp"></select></label>
-    <div id="hlp">Cara main: WASD jalan · panah ← → putar kamera · F tembak · R isi peluru dengan jawab soal (tekan 1–4). Capai target eliminasi untuk menang misi!</div>
+    <div id="hlp">Cara main: WASD jalan · Klik & Geser mouse / panah ← → putar kamera · F tembak · R isi peluru dengan jawab soal (tekan 1–4).</div>
   </div>
   <div class="pn" id="rp">
     <h2>🎨 Kustom avatar</h2>
@@ -80,9 +81,9 @@ label select,label input,#rc{width:100%;box-sizing:border-box;padding:7px;border
     <button id="cp" style="background:#3ddc84">📋 Salin Kode</button>
   </div>
   <div id="xh">+</div>
-  <div id="hint">Jalan pakai WASD, putar pakai panah ← →, tembak tekan F. Peluru habis? Jawab soal untuk isi lagi!</div>
+  <div id="hint">Kursor bebas! Klik & geser layar (atau panah ← →) untuk putar kamera, WASD jalan, tekan F untuk tembak!</div>
   <button id="fb">🔫 TEMBAK</button>
-  <div id="ctl"><b>W</b><b>A</b><b>S</b><b>D</b> gerak · <b>← →</b> putar kamera · <b>F</b> tembak · <b>R</b> isi peluru (jawab soal) · <b>1-5</b> ganti senjata · <b>Esc</b>/<b>P</b> jeda</div>
+  <div id="ctl"><b>W</b><b>A</b><b>S</b><b>D</b> gerak · <b>Geser Mouse</b> / <b>← →</b> kamera · <b>F</b> tembak · <b>R</b> isi peluru · <b>1-5</b> senjata · <b>Esc</b>/<b>P</b> jeda</div>
   <div id="hb"></div><div id="ds">Eliminasi! Bangkit lagi...</div>
   <div id="qz"><h3 id="qq"></h3><div id="qa"></div><p id="qm"></p></div>
   <div id="pm"><div class="pn"><h2>⏸ Game dijeda</h2><button class="bt" id="pr">▶️ Lanjutkan</button><button class="bt b3" id="pb">🏠 Kembali ke Beranda</button></div></div>
@@ -111,7 +112,7 @@ try{Object.assign(cfg,JSON.parse(localStorage.getItem('rbqa')||'{}'))}catch(e){}
 const save=()=>{try{localStorage.setItem('rbqa',JSON.stringify(cfg))}catch(e){}};
 const toast=(t,d=3500)=>{const e=$('tst');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',d)};
 
-// Fungsi Salin Kode Anti-Blokir Iframe
+// Fungsi Salin Kode Anti-Blokir
 function copyText(text){
   const fallback=()=>{
     const ta=document.createElement('textarea');
@@ -251,12 +252,11 @@ $('nm').oninput=()=>{cfg.name=$('nm').value.trim()||'Pemain';save()};$('lv').onc
 $('mp').onchange=()=>setMap(+$('mp').value);$('mp2').onchange=()=>{setMap(+$('mp2').value,true);$('mp2').blur()};
 
 let paused=false;
-function setPause(v){paused=v;$('pm').style.display=v?'flex':'none';fire=false;zoom=false;for(const k in keys)keys[k]=false;if(v){if(document.pointerLockElement)document.exitPointerLock()}else{try{document.body.requestPointerLock()}catch(e){}}}
-function home(){paused=false;$('pm').style.display='none';try{document.exitPointerLock()}catch(e){}quiz=null;$('qz').style.display='none';fire=false;zoom=false;for(const k in keys)keys[k]=false;B.forEach(b=>scene.remove(b.m));B=[];if(me)scene.remove(me.mesh);me=null;bots.forEach(b=>scene.remove(b.mesh));bots=[];for(const k in rem)scene.remove(rem[k].mesh);rem={};
+function setPause(v){paused=v;$('pm').style.display=v?'flex':'none';fire=false;zoom=false;for(const k in keys)keys[k]=false}
+function home(){paused=false;$('pm').style.display='none';quiz=null;$('qz').style.display='none';fire=false;zoom=false;for(const k in keys)keys[k]=false;B.forEach(b=>scene.remove(b.m));B=[];if(me)scene.remove(me.mesh);me=null;bots.forEach(b=>scene.remove(b.mesh));bots=[];for(const k in rem)scene.remove(rem[k].mesh);rem={};
 if(net){try{peer&&peer.destroy()}catch(e){}peer=null;conns=[];hostConn=null;net=false;isHost=false}
 mis=1;target=10;lock=false;$('ban').style.display='none';$('ds').style.display='none';$('kf').innerHTML='';mode='lobby';$('hud').hidden=true;$('lobby').style.display='flex';$('ms').textContent='';setMap(cfg.map);lobAv();yaw=0;pitch=0;ay=0;ap=0;yv=0;pv=0}
 $('pz').onclick=()=>{setPause(true);$('pz').blur()};$('pr').onclick=()=>setPause(false);$('pb').onclick=home;
-document.addEventListener('pointerlockchange',()=>{if(!document.pointerLockElement&&mode=='play'&&!paused)setPause(true)});
 $('mu').onclick=()=>{mut=!mut;$('mu').textContent=mut?'🔇':'🎵'};
 $('cp').onclick=()=>{if(room)copyText(room)};
 
@@ -301,15 +301,38 @@ const ar=o.o.slice().sort(()=>R()-.5);return{q:o.q,o:ar,ci:ar.indexOf(o.c)}}
 function openQ(){if(quiz||!me||me.dead)return;quiz=mkQ();fire=false;$('qq').textContent='📘 '+quiz.q;const qa=$('qa');qa.innerHTML='';quiz.o.forEach((t,i)=>{const b=document.createElement('button');b.textContent=(i+1)+'. '+t;b.onclick=()=>ans(i);qa.appendChild(b)});$('qm').textContent='';$('qz').style.display='block';beep(500,.12,'triangle',.06)}
 function ans(i){if(!quiz)return;if(i==quiz.ci){me.ammo[me.w]=WP[me.w].a;me.shield=3;me.speed=3;quiz=null;$('qz').style.display='none';[600,800,1000].forEach((f,k)=>setTimeout(()=>beep(f,.12,'triangle',.07),k*90));toast('✅ Benar! Peluru penuh + Shield & Speed 3 detik')}else{$('qm').textContent='❌ Salah! Coba lagi';beep(120,.25,'sawtooth',.07)}}
 
-/* Input Controls */
+/* Input Controls (Kursor Bebas + Click & Drag Kamera) */
+let dragging=false, lastX=0, lastY=0;
 addEventListener('keydown',e=>{if(e.target.tagName=='INPUT')return;const k=e.code;keys[k]=true;if(mode!='play')return;if(k=='Escape'||k=='KeyP'){setPause(!paused);return}if(paused)return;if(['ArrowLeft','ArrowRight','Space','ArrowUp','ArrowDown'].includes(k))e.preventDefault();
 const dg=k.startsWith('Digit')||k.startsWith('Numpad')?+k.slice(-1):0;if(quiz){if(dg>=1&&dg<=4)ans(dg-1);return}
 if(dg>=1&&dg<=5)selW(dg-1);if(k=='KeyR'&&me.ammo[me.w]<WP[me.w].a)openQ()});
 addEventListener('keyup',e=>{keys[e.code]=false});
-addEventListener('mousedown',e=>{if(mode!='play'||paused||(e.target.closest&&e.target.closest('button,select,input,#qz,#tc')))return;if(e.button==0)fire=true;if(e.button==2)zoom=true;if(!document.pointerLockElement){try{document.body.requestPointerLock()}catch(x){}}});
-addEventListener('mouseup',e=>{if(e.button==0)fire=false;if(e.button==2)zoom=false});$('fb').addEventListener('mousedown',e=>{e.preventDefault();e.stopPropagation();fire=true});
+
+// Mouse Drag untuk putar kamera tanpa mengunci kursor
+$('c').addEventListener('mousedown',e=>{
+  if(mode!='play'||paused)return;
+  if(e.button==0){dragging=true;lastX=e.clientX;lastY=e.clientY}
+  if(e.button==2)zoom=true;
+});
+addEventListener('mousemove',e=>{
+  if(dragging && mode=='play' && !paused){
+    const sn=$('sn').value*.0022;
+    ay-=(e.clientX-lastX)*sn;
+    ap-=(e.clientY-lastY)*sn;
+    lastX=e.clientX;
+    lastY=e.clientY;
+  }
+});
+addEventListener('mouseup',e=>{
+  if(e.button==0){dragging=false;fire=false}
+  if(e.button==2)zoom=false;
+});
+
+$('fb').addEventListener('mousedown',e=>{e.preventDefault();e.stopPropagation();fire=true});
+$('fb').addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();fire=true},{passive:false});
+$('fb').addEventListener('touchend',e=>{e.preventDefault();fire=false});
 addEventListener('contextmenu',e=>e.preventDefault());
-addEventListener('mousemove',e=>{if(mode=='play'&&document.pointerLockElement){const sn=$('sn').value*.0004,mx=Math.max(-40,Math.min(40,e.movementX)),my=Math.max(-40,Math.min(40,e.movementY));ay-=mx*sn;ap-=my*sn}});
+
 const tb=(id,on,off)=>{const el=$(id);el.addEventListener('touchstart',e=>{on();e.preventDefault()},{passive:false});el.addEventListener('touchend',()=>off&&off());el.addEventListener('touchcancel',()=>off&&off())};
 tb('tf',()=>tF=true,()=>tF=false);tb('tj',()=>tJ=true,()=>tJ=false);tb('tr2',()=>{if(me&&me.ammo[me.w]<WP[me.w].a)openQ()});
 const jy=$('joy'),kn=$('kn');let jid=null,jc=[0,0];
@@ -359,7 +382,6 @@ function peerStart(host,code){
     clearTimeout(to);
     if(ok)return;
     if(er.type=='unavailable-id' && host){
-      // Jika kode room tabrakan, otomatis buat kode baru
       peer.destroy();
       peerStart(true, nextCode());
       return;
@@ -392,7 +414,7 @@ function peerStart(host,code){
 /* Start Game */
 function go(m,pid){if(mode=='play')return;mode='play';net=m=='mp';scene.remove(lob);me=mkE(cfg,cfg.name,false);if(pid)me.id=pid;scene.add(me.mesh);spawn(me);me.shield=2;
 if(!net)for(let i=0;i<4;i++){const b=mkE({skin:rn(0,5),face:rn(0,3),hat:rn(0,4),out:rn(0,5),acc:rn(0,4)},['Bot Alpha','Bot Beta','Bot Gamma','Bot Delta'][i],true);b.w=[0,1,3][rn(0,2)];bots.push(b);scene.add(b.mesh);spawn(b)}
-$('lobby').style.display='none';$('hud').hidden=false;$('rm').textContent=net?'Room: '+room:'Solo vs Bot AI';$('cp').style.display=net?'':'none';yaw=0;pitch=0;try{document.body.requestPointerLock()}catch(e){}music();beep(600,.15,'triangle',.07);if(net){$('tst').style.display='none';if(isHost)toast('Room '+room+' aktif! Klik "Salin Kode" di kanan atas.',7000)}setTimeout(()=>{$('hint').style.display='none'},20000)}
+$('lobby').style.display='none';$('hud').hidden=false;$('rm').textContent=net?'Room: '+room:'Solo vs Bot AI';$('cp').style.display=net?'':'none';yaw=0;pitch=0;music();beep(600,.15,'triangle',.07);if(net){$('tst').style.display='none';if(isHost)toast('Room '+room+' aktif! Klik "Salin Kode" di kanan atas.',7000)}setTimeout(()=>{$('hint').style.display='none'},20000)}
 $('b1').onclick=()=>go('solo');
 $('b2').onclick=()=>peerStart(true,nextCode());
 $('b3').onclick=()=>{const c=$('rc').value.trim();if(!/^\d{4}$/.test(c)){$('ms').textContent='Masukkan kode room 4 digit!';return}peerStart(false,c)};
