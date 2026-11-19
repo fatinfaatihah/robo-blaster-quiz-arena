@@ -41,11 +41,14 @@ label select,label input,#rc{width:100%;box-sizing:border-box;padding:7px;border
 #kn{position:absolute;left:40px;top:40px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.55)}
 .tb{position:absolute;width:62px;height:62px;border-radius:50%;background:rgba(255,212,0,.65);border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#111;pointer-events:auto;touch-action:none}
 #tst{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#ffd400;color:#111;padding:8px 16px;border-radius:10px;font-weight:800;font-size:13px;display:none;z-index:99;max-width:90%;box-shadow:0 4px 12px rgba(0,0,0,.5)}
+#muLob{position:fixed;top:12px;left:50%;transform:translateX(-50%);background:rgba(10,14,34,.85);border:2px solid #ffd400;color:#ffd400;padding:6px 14px;border-radius:20px;font-weight:800;font-size:12px;cursor:pointer;z-index:20}
+#muLob:hover{background:#ffd400;color:#111}
 @media(max-width:760px){#lobby{flex-direction:column;justify-content:space-between}#lobby .pn{width:100%;max-height:46%}#lobby #lp h1{font-size:17px}#kf{top:230px}#hb{bottom:6px;gap:3px}#hb div{min-width:48px;padding:3px 4px;font-size:10px}#mis{font-size:12px;max-width:44%;top:44px}#lb{top:90px}}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<button id="muLob">🎵 Musik: ON</button>
 <div id="lobby">
   <div class="pn" id="lp">
     <h1>🤖 ROBO-BLASTER QUIZ ARENA</h1>
@@ -105,7 +108,7 @@ const FAC=['😊 Senyum','😎 Cool','😠 Garang','😮 Kaget'],HAT=['Rambut Ru
 const OUF=[['#222222','#333333'],['#2b6cff','#1a3f99'],['#e03030','#8a1a1a'],['#8a3cff','#4d1a99'],['#f4f4f4','#1c2f6b'],['#f5f5f5','#ff8c1a']];
 const OUN=['Jaket Hitam Klasik','Armor Biru','Armor Merah','Armor Ungu','Seragam Pelajar','Baju Astronot'],ACC=['Polos','Kacamata Hitam','Visor Laser','Jetpack Mini','Sayap Energi'];
 const MAPN=['🏙️ Kota Klasik Roblox','🏜️ Gurun & Piramida','🚀 Stasiun Luar Angkasa','❄️ Benteng Gunung Es','🏝️ Pulau Tropis'];
-const WP=[{n:'Rapid Blaster',a:15,r:.16,d:12,p:1,s:.015,v:48,c:0xff4d4d},{n:'SMG Pulse',a:20,r:.08,d:7,p:1,s:.04,v:50,c:0x4dffea},{n:'Scatter Blaster',a:6,r:.7,d:9,p:5,s:.12,v:42,c:0xffb400},{n:'Plasma Pistol',a:10,r:.35,d:22,p:1,s:.01,v:36,c:0xc04dff},{n:'Rail Sniper',a:4,r:1.1,d:60,p:1,s:0,v:90,c:0xffffff}];
+const WP=[{n:'Rapid Blaster',a:15,r:.16,d:12,p:1,s:.015,v:48,c:0xff4d4d},{n:'SMG Pulse',a:20,r:.08,d:7,p:1,s:.04,v:50,c:0x4dffea},{n:'Scatter Blaster',a:6,r:.7,d:9,p:5,s:.12,v:42,c:0xffb400},{n:'Plasma Pistol',a:10,r:.35,d:22,p:1,s:.01,v:36,c:0xc04dff},{n:'Rail Sniper',a:4,r1.1,d:60,p:1,s:0,v:90,c:0xffffff}];
 
 let cfg={name:'Pemain',lv:0,sb:0,skin:0,face:0,hat:0,out:1,acc:0,map:0};
 try{Object.assign(cfg,JSON.parse(localStorage.getItem('rbqa')||'{}'))}catch(e){}
@@ -137,9 +140,67 @@ function copyText(text){
   }
 }
 
-/* Audio */
-let ac,mut=false;
-function beep(f,d=.1,t='square',v=.05,s=0){if(mut)return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.state=='suspended')ac.resume();const o=ac.createOscillator(),g=ac.createGain(),n=ac.currentTime;o.type=t;o.frequency.setValueAtTime(f,n);if(s)o.frequency.exponentialRampToValueAtTime(s,n+d);g.gain.setValueAtTime(v,n);g.gain.exponentialRampToValueAtTime(.001,n+d);o.connect(g);g.connect(ac.destination);o.start();o.stop(n+d)}catch(e){}}
+/* Audio & Background Music (Lobby + Arena) */
+let ac,mut=false,mi=0,mt=null;
+function initAudio(){
+  try{
+    ac=ac||new(window.AudioContext||window.webkitAudioContext)();
+    if(ac.state=='suspended')ac.resume();
+  }catch(e){}
+}
+function beep(f,d=.1,t='square',v=.05,s=0){
+  if(mut)return;
+  initAudio();
+  if(!ac||ac.state!='running')return;
+  try{
+    const o=ac.createOscillator(),g=ac.createGain(),n=ac.currentTime;
+    o.type=t;o.frequency.setValueAtTime(f,n);
+    if(s)o.frequency.exponentialRampToValueAtTime(s,n+d);
+    g.gain.setValueAtTime(v,n);
+    g.gain.exponentialRampToValueAtTime(.001,n+d);
+    o.connect(g);g.connect(ac.destination);o.start();o.stop(n+d);
+  }catch(e){}
+}
+
+const SC_LOBBY=[261.6,329.6,392.0,493.9,523.3,493.9,392.0,329.6, 293.7,349.2,440.0,523.3,587.3,523.3,440.0,349.2];
+const SC_PLAY=[262,311,392,349,311,392,466,392, 233,294,349,311,294,349,392,349];
+
+function startMusic(){
+  if(mt)return;
+  mt=setInterval(()=>{
+    if(mut)return;
+    initAudio();
+    if(!ac||ac.state!='running')return;
+    if(mode=='lobby'){
+      const n=SC_LOBBY[mi%16];
+      beep(n,.24,'sine',.035);
+      if(mi%4==0)beep(n/2,.45,'triangle',.04);
+      if(mi%2==0)beep(n*1.5,.12,'triangle',.015);
+    }else if(mode=='play'&&!paused){
+      const n=SC_PLAY[mi%16];
+      beep(n/2,.18,'triangle',.03);
+      if(mi%2==0)beep(n,.11,'square',.016);
+      if(mi%4==0)beep(65,.35,'sine',.055);
+      if(mi%4==2)beep(180,.06,'sawtooth',.02);
+    }
+    mi++;
+  },210);
+}
+
+// Langsung coba nyalakan musik saat link dibuka & aktifkan otomatis pada interaksi pertama
+startMusic();
+['pointerdown','keydown','touchstart','click'].forEach(ev=>{
+  window.addEventListener(ev,()=>{initAudio();startMusic()},{once:true,passive:true});
+});
+
+function toggleMute(){
+  mut=!mut;
+  initAudio();
+  $('mu').textContent=mut?'🔇':'🎵';
+  $('muLob').textContent=mut?'🔇 Musik: OFF':'🎵 Musik: ON';
+}
+$('mu').onclick=toggleMute;
+$('muLob').onclick=toggleMute;
 
 /* Three.js Setup */
 const rd=new THREE.WebGLRenderer({canvas:$('c'),antialias:true});rd.setPixelRatio(Math.min(devicePixelRatio||1,2));
@@ -239,8 +300,7 @@ for(let k=0;k<5;k++){const p=rp();bx(p[0],p[1],2,2,2,0xa8743a)}}}
 
 /* State */
 let mode='lobby',me=null,bots=[],rem={},B=[],mis=1,target=10,lock=false,fire=false,zoom=false,quiz=null,yaw=0,pitch=0,T=0,lob=null,net=false,isHost=false,peer=null,conns=[],hostConn=null,room='',netT=0,hudT=0;
-const keys={},joy={x:0,y:0};let fs=0,mi=0,mt=null,yv=0,pv=0,ay=0,ap=0;const SC=[262,311,392,349,311,392,466,392];
-function music(){if(mt)return;mt=setInterval(()=>{if(mut||mode!='play')return;const n=SC[mi%8];beep(n/2,.18,'triangle',.025);if(mi%2==0)beep(n,.1,'square',.012);if(mi%8==0)beep(65,.4,'sine',.05);mi++},230)}let tF=false,tJ=false;
+const keys={},joy={x:0,y:0};let fs=0,yv=0,pv=0,ay=0,ap=0;let tF=false,tJ=false;
 function lobAv(){if(lob)scene.remove(lob);lob=mk(cfg);scene.add(lob)}
 function setMap(i,bc){cfg.map=i;save();build(i);$('mp').value=i;$('mp2').value=i;if(lob){scene.remove(lob);scene.add(lob)}if(me&&mode=='play'){E().forEach(e=>spawn(e))}if(bc&&net&&isHost)send({t:'mp',i:i,m:mis})}
 
@@ -255,9 +315,8 @@ let paused=false;
 function setPause(v){paused=v;$('pm').style.display=v?'flex':'none';fire=false;zoom=false;for(const k in keys)keys[k]=false}
 function home(){paused=false;$('pm').style.display='none';quiz=null;$('qz').style.display='none';fire=false;zoom=false;for(const k in keys)keys[k]=false;B.forEach(b=>scene.remove(b.m));B=[];if(me)scene.remove(me.mesh);me=null;bots.forEach(b=>scene.remove(b.mesh));bots=[];for(const k in rem)scene.remove(rem[k].mesh);rem={};
 if(net){try{peer&&peer.destroy()}catch(e){}peer=null;conns=[];hostConn=null;net=false;isHost=false}
-mis=1;target=10;lock=false;$('ban').style.display='none';$('ds').style.display='none';$('kf').innerHTML='';mode='lobby';$('hud').hidden=true;$('lobby').style.display='flex';$('ms').textContent='';setMap(cfg.map);lobAv();yaw=0;pitch=0;ay=0;ap=0;yv=0;pv=0}
+mis=1;target=10;lock=false;$('ban').style.display='none';$('ds').style.display='none';$('kf').innerHTML='';mode='lobby';$('hud').hidden=true;$('lobby').style.display='flex';$('muLob').style.display='block';$('ms').textContent='';setMap(cfg.map);lobAv();yaw=0;pitch=0;ay=0;ap=0;yv=0;pv=0}
 $('pz').onclick=()=>{setPause(true);$('pz').blur()};$('pr').onclick=()=>setPause(false);$('pb').onclick=home;
-$('mu').onclick=()=>{mut=!mut;$('mu').textContent=mut?'🔇':'🎵'};
 $('cp').onclick=()=>{if(room)copyText(room)};
 
 /* Physics & Entities */
@@ -308,7 +367,6 @@ const dg=k.startsWith('Digit')||k.startsWith('Numpad')?+k.slice(-1):0;if(quiz){i
 if(dg>=1&&dg<=5)selW(dg-1);if(k=='KeyR'&&me.ammo[me.w]<WP[me.w].a)openQ()});
 addEventListener('keyup',e=>{keys[e.code]=false});
 
-// Mouse Drag untuk putar kamera tanpa mengunci kursor
 $('c').addEventListener('mousedown',e=>{
   if(mode!='play'||paused)return;
   if(e.button==0){dragging=true;lastX=e.clientX;lastY=e.clientY}
@@ -414,7 +472,7 @@ function peerStart(host,code){
 /* Start Game */
 function go(m,pid){if(mode=='play')return;mode='play';net=m=='mp';scene.remove(lob);me=mkE(cfg,cfg.name,false);if(pid)me.id=pid;scene.add(me.mesh);spawn(me);me.shield=2;
 if(!net)for(let i=0;i<4;i++){const b=mkE({skin:rn(0,5),face:rn(0,3),hat:rn(0,4),out:rn(0,5),acc:rn(0,4)},['Bot Alpha','Bot Beta','Bot Gamma','Bot Delta'][i],true);b.w=[0,1,3][rn(0,2)];bots.push(b);scene.add(b.mesh);spawn(b)}
-$('lobby').style.display='none';$('hud').hidden=false;$('rm').textContent=net?'Room: '+room:'Solo vs Bot AI';$('cp').style.display=net?'':'none';yaw=0;pitch=0;music();beep(600,.15,'triangle',.07);if(net){$('tst').style.display='none';if(isHost)toast('Room '+room+' aktif! Klik "Salin Kode" di kanan atas.',7000)}setTimeout(()=>{$('hint').style.display='none'},20000)}
+$('lobby').style.display='none';$('muLob').style.display='none';$('hud').hidden=false;$('rm').textContent=net?'Room: '+room:'Solo vs Bot AI';$('cp').style.display=net?'':'none';yaw=0;pitch=0;initAudio();startMusic();beep(600,.15,'triangle',.07);if(net){$('tst').style.display='none';if(isHost)toast('Room '+room+' aktif! Klik "Salin Kode" di kanan atas.',7000)}setTimeout(()=>{$('hint').style.display='none'},20000)}
 $('b1').onclick=()=>go('solo');
 $('b2').onclick=()=>peerStart(true,nextCode());
 $('b3').onclick=()=>{const c=$('rc').value.trim();if(!/^\d{4}$/.test(c)){$('ms').textContent='Masukkan kode room 4 digit!';return}peerStart(false,c)};
